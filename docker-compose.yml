@@ -1,0 +1,288 @@
+version: '3.8'
+
+services:
+  # ---------------------
+  # CONTROLLER SERVICE
+  # ---------------------
+  controller-service:
+    build: ./controller-service
+    container_name: socialwave-controller
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # AUTH SERVICE
+  # ---------------------
+  auth-service:
+    build: ./auth-service
+    container_name: socialwave-auth
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - MONGO_URI=mongodb://mongodb:27017/auth-db
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+    depends_on:
+      - mongodb
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4001', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # USER SERVICE
+  # ---------------------
+  user-service:
+    build: ./user-service
+    container_name: socialwave-user
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+      - MONGO_URI=mongodb://mongodb:27017/user-db
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+    depends_on:
+      - mongodb
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4002', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # POST SERVICE
+  # ---------------------
+  post-service:
+    build: ./post-service
+    container_name: socialwave-post
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+      - MONGO_URI=mongodb://mongodb:27017/post-db
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    depends_on:
+      - mongodb
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4003', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # FEED SERVICE
+  # ---------------------
+  feed-service:
+    build: ./feed-service
+    container_name: socialwave-feed
+    ports:
+      - "4004:4004"
+    environment:
+      - PORT=4004
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+      - FRIEND_URL=http://friend-service:4006
+      - POST_URL=http://post-service:4003
+    depends_on:
+      - post-service
+      - friend-service
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4004', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # COMMENT SERVICE
+  # ---------------------
+  comment-service:
+    build: ./comment-service
+    container_name: socialwave-comment
+    ports:
+      - "4005:4005"
+    environment:
+      - PORT=4005
+      - MONGO_URI=mongodb://mongodb:27017/comment-db
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+      - NOTIFY_URL=http://notification-service:4007
+    depends_on:
+      - mongodb
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4005', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # FRIEND SERVICE
+  # ---------------------
+  friend-service:
+    build: ./friend-service
+    container_name: socialwave-friend
+    ports:
+      - "4006:4006"
+    environment:
+      - PORT=4006
+      - MONGO_URI=mongodb://mongodb:27017/friend-db
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+      - NOTIFY_URL=http://notification-service:4007
+      - USER_URL=http://user-service:4002
+    depends_on:
+      - mongodb
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4006', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # NOTIFICATION SERVICE
+  # ---------------------
+  notification-service:
+    build: ./notification-service
+    container_name: socialwave-notification
+    ports:
+      - "4007:4007"
+    environment:
+      - PORT=4007
+      - MONGO_URI=mongodb://mongodb:27017/notify-db
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+    depends_on:
+      - mongodb
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4007', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # STORY SERVICE
+  # ---------------------
+  story-service:
+    build: ./story-service
+    container_name: socialwave-story
+    ports:
+      - "4009:4009"
+    environment:
+      - PORT=4009
+      - MONGO_URI=mongodb://mongodb:27017/story-db
+      - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+      - NOTIFY_URL=http://notification-service:4007
+      - FRIEND_URL=http://friend-service:4006
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    depends_on:
+      - mongodb
+    networks:
+      - social-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4009', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------
+  # API GATEWAY
+  # ---------------------
+  api-gateway:
+    build: ./api-gateway
+    container_name: socialwave-gateway
+    ports:
+      - "4008:4008"
+    environment:
+      - PORT=4008
+      - CTRL_URL=http://controller-service:4000
+      - AUTH_URL=http://auth-service:4001
+      - USER_URL=http://user-service:4002
+      - POST_URL=http://post-service:4003
+      - FEED_URL=http://feed-service:4004
+      - COMMENT_URL=http://comment-service:4005
+      - FRIEND_URL=http://friend-service:4006
+      - NOTIFY_URL=http://notification-service:4007
+      - STORY_URL=http://story-service:4009
+    depends_on:
+      - controller-service
+      - auth-service
+      - user-service
+      - post-service
+      - feed-service
+      - comment-service
+      - friend-service
+      - notification-service
+      - story-service
+    networks:
+      - social-net
+    restart: unless-stopped
+
+  # ---------------------
+  # FRONTEND
+  # ---------------------
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: socialwave-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - social-net
+    restart: unless-stopped
+
+  # ---------------------
+  # DATABASE
+  # ---------------------
+  mongodb:
+    image: mongo:6
+    container_name: socialwave-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - social-net
+    restart: unless-stopped
+
+networks:
+  social-net:
+    driver: bridge
+
+volumes:
+  mongodb-data:
