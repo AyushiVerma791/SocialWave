@@ -8,16 +8,18 @@
 
 param(
     [string]$ClusterName = "socialwave-cluster",
-    [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { "us-east-1" }),
-    [string]$NodeType = "t3.medium",
+    [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { $r = (aws configure get region 2>$null); if ($r) { $r.Trim() } else { "ap-south-1" } }),
+    [string]$NodeType = "t3.small",
     [int]$Nodes = 2
 )
 
-$ErrorActionPreference = "Stop"
+$env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+$ErrorActionPreference = "Continue"
 
 $AccountId = (aws sts get-caller-identity --query Account --output text)
 if (-not $AccountId) {
     Write-Error "AWS credentials not detected. Run 'aws configure' first."
+    exit 1
 }
 
 Write-Host "==========================================================" -ForegroundColor Cyan
@@ -30,8 +32,8 @@ Write-Host " Cost Profile: Minimalist (Public Subnets, No NAT Gateway)"
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Check or Create Cluster
-$clusterExists = eksctl get cluster --name $ClusterName --region $Region 2>$null
-if ($clusterExists) {
+$existingClusters = (aws eks list-clusters --region $Region --query "clusters" --output text 2>$null)
+if ($existingClusters -and ($existingClusters -split '\s+' -contains $ClusterName)) {
     Write-Host "Cluster '$ClusterName' already exists. Skipping creation." -ForegroundColor Yellow
 } else {
     Write-Host "--> Creating EKS Cluster '$ClusterName' (takes ~10-15 mins)..." -ForegroundColor Cyan
@@ -59,8 +61,8 @@ Write-Host "--> Configuring AWS Load Balancer Controller IAM Policy & ServiceAcc
 $PolicyName = "AWSLoadBalancerControllerIAMPolicy-SocialWave"
 $PolicyArn = "arn:aws:iam::$($AccountId):policy/$PolicyName"
 
-$policyCheck = aws iam get-policy --policy-arn $PolicyArn 2>$null
-if (-not $policyCheck) {
+$existingPolicy = (aws iam list-policies --scope Local --query "Policies[?PolicyName=='$PolicyName'].Arn" --output text 2>$null)
+if (-not $existingPolicy) {
     $tempPolicy = "$env:TEMP\iam_policy.json"
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.8.1/docs/install/iam_policy.json" -OutFile $tempPolicy
     aws iam create-policy --policy-name $PolicyName --policy-document "file://$tempPolicy" | Out-Null

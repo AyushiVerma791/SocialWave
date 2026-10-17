@@ -22,7 +22,7 @@ spec:
       containers:
         - name: controller-service
           image: socialwave-controller:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4000
           env:
@@ -75,7 +75,7 @@ spec:
       containers:
         - name: auth-service
           image: socialwave-auth:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4001
           env:
@@ -138,7 +138,7 @@ spec:
       containers:
         - name: user-service
           image: socialwave-user:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4002
           env:
@@ -201,7 +201,7 @@ spec:
       containers:
         - name: post-service
           image: socialwave-post:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4003
           env:
@@ -295,7 +295,7 @@ spec:
       containers:
         - name: feed-service
           image: socialwave-feed:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4004
           env:
@@ -363,7 +363,7 @@ spec:
       containers:
         - name: comment-service
           image: socialwave-comment:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4005
           env:
@@ -431,7 +431,7 @@ spec:
       containers:
         - name: friend-service
           image: socialwave-friend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4006
           env:
@@ -504,7 +504,7 @@ spec:
       containers:
         - name: notification-service
           image: socialwave-notification:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4007
           env:
@@ -567,7 +567,7 @@ spec:
       containers:
         - name: story-service
           image: socialwave-story:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4009
           env:
@@ -671,7 +671,7 @@ spec:
       containers:
         - name: api-gateway
           image: socialwave-api-gateway:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 4008
           env:
@@ -765,7 +765,7 @@ spec:
       containers:
         - name: frontend
           image: socialwave-frontend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:

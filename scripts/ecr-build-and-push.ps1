@@ -12,7 +12,7 @@
 #>
 
 param(
-    [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { "us-east-1" }),
+    [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { $r = (aws configure get region 2>$null); if ($r) { $r.Trim() } else { "ap-south-1" } }),
     [string]$AccountId = $(if ($env:AWS_ACCOUNT_ID) { $env:AWS_ACCOUNT_ID } else { (aws sts get-caller-identity --query Account --output text 2>$null) }),
     [string]$ImageTag = "latest"
 )
@@ -50,16 +50,22 @@ $Services = @(
     @{ Dir = "frontend";             Repo = "socialwave-frontend" }
 )
 
+$existingRepos = (aws ecr describe-repositories --region $Region --query 'repositories[*].repositoryName' --output text 2>$null)
+if ($existingRepos) {
+    $existingList = $existingRepos -split '\s+'
+} else {
+    $existingList = @()
+}
+
 foreach ($s in $Services) {
     Write-Host "----------------------------------------------------------" -ForegroundColor Gray
     Write-Host " Processing Service: $($s.Repo) ($($s.Dir))" -ForegroundColor Green
     Write-Host "----------------------------------------------------------" -ForegroundColor Gray
 
     # Check if ECR repo exists
-    $exists = aws ecr describe-repositories --repository-names $s.Repo --region $Region 2>$null
-    if (-not $exists) {
+    if ($existingList -notcontains $s.Repo) {
         Write-Host "Creating ECR repository: $($s.Repo)..." -ForegroundColor Yellow
-        aws ecr create-repository --repository-name $s.Repo --region $Region --image-scanning-configuration scanOnPush=true --encryption-configuration encryptionType=AES256 | Out-Null
+        aws ecr create-repository --repository-name $s.Repo --region $Region --image-scanning-configuration scanOnPush=true --encryption-configuration encryptionType=AES256 2>$null | Out-Null
     }
 
     $TargetImage = "$Registry/$($s.Repo):$ImageTag"

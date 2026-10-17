@@ -9,39 +9,38 @@ resources:
 patches:
   - path: aws-secrets-patch.yaml
 
-# Configure images for Amazon ECR
-# Replace <AWS_ACCOUNT_ID> and <AWS_REGION> dynamically via CI/CD or kustomize edit set image
+# Amazon ECR Registry Images
 images:
   - name: socialwave-controller
-    newName: socialwave-controller
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-controller
+    newTag: latest
   - name: socialwave-auth
-    newName: socialwave-auth
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-auth
+    newTag: latest
   - name: socialwave-user
-    newName: socialwave-user
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-user
+    newTag: latest
   - name: socialwave-post
-    newName: socialwave-post
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-post
+    newTag: latest
   - name: socialwave-feed
-    newName: socialwave-feed
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-feed
+    newTag: latest
   - name: socialwave-comment
-    newName: socialwave-comment
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-comment
+    newTag: latest
   - name: socialwave-friend
-    newName: socialwave-friend
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-friend
+    newTag: latest
   - name: socialwave-notification
-    newName: socialwave-notification
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-notification
+    newTag: latest
   - name: socialwave-story
-    newName: socialwave-story
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-story
+    newTag: latest
   - name: socialwave-api-gateway
-    newName: socialwave-api-gateway
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-api-gateway
+    newTag: latest
   - name: socialwave-frontend
-    newName: socialwave-frontend
-    newTag: v1.0.0
+    newName: 402349693545.dkr.ecr.ap-south-1.amazonaws.com/socialwave-frontend
+    newTag: latest

@@ -8,7 +8,7 @@
 
 param(
     [string]$ClusterName = "socialwave-cluster",
-    [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { "us-east-1" }),
+    [string]$Region = $(if ($env:AWS_REGION) { $env:AWS_REGION } else { $r = (aws configure get region 2>$null); if ($r) { $r.Trim() } else { "ap-south-1" } }),
     [switch]$DeleteECR = $false
 )
 
