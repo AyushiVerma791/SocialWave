@@ -4,6 +4,8 @@ Cloud-Native Microservices Platform on AWS and Kubernetes.
 
 SocialWave is an Instagram-like social media application engineered with a distributed microservices architecture. The system is containerized with Docker, orchestrated on Amazon Elastic Kubernetes Service (EKS), and served globally through an AWS Application Load Balancer (ALB).
 
+![SocialWave Running Live on AWS](docs/images/socialwave-demo.png)
+
 ---
 
 ## Overview
