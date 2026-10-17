@@ -177,11 +177,9 @@ kubectl get ingress -n socialwave
 
 ---
 
-## Cost Management and Cleanup
+## Infrastructure Teardown
 
-This project is optimized for student learning and budget awareness. Running the full stack on `t3.small` nodes in `ap-south-1` costs approximately ₹50 to ₹70 INR ($0.60 to $0.85 USD) for a 2-to-3 hour demonstration.
-
-To avoid ongoing charges, run the automated teardown script when testing is complete:
+To decommission all deployed AWS resources and Kubernetes workloads:
 
 ```powershell
 # Windows PowerShell
@@ -191,11 +189,7 @@ To avoid ongoing charges, run the automated teardown script when testing is comp
 ./scripts/aws-cleanup.sh ap-south-1 false
 ```
 
-The cleanup script removes:
-- AWS Application Load Balancer
-- Kubernetes deployments, pods, and services
-- EKS managed nodegroup
-- EKS cluster and IAM OIDC provider
+This de-provisions the Application Load Balancer, EKS managed nodegroup, cluster control plane, and IAM OIDC configurations.
 
 ---
 
@@ -209,4 +203,5 @@ Comprehensive guides are available in the repository:
 - [AWS Infrastructure and Prerequisites](docs/aws-setup.md)
 - [Kubernetes Manifests and Troubleshooting](docs/kubernetes-deployment.md)
 - [GitHub Actions CI/CD with OIDC](docs/cicd.md)
-- [Cost Control and Resource Cleanup](docs/cost-and-cleanup.md)
+- [Infrastructure Teardown Guide](docs/cost-and-cleanup.md)
+
