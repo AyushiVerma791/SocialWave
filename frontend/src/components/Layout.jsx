@@ -1,10 +1,12 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Compass, User as UserIcon, Bell, Settings, LogOut, PlusSquare } from 'lucide-react';
+import { Home, Compass, User as UserIcon, Bell, Settings, LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import { useTheme } from '../ThemeContext';
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,6 +38,12 @@ export default function Layout() {
               </Link>
             </li>
           ))}
+          <li className="nav-theme-toggle">
+            <button onClick={toggleTheme} className="nav-link theme-btn" title="Switch Theme">
+              {isDark ? <Sun size={24} /> : <Moon size={24} />}
+              <span className="nav-label">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+          </li>
           <li className="nav-logout">
             <button onClick={handleLogout} className="nav-link logout-btn">
               <LogOut size={24} />
@@ -56,6 +64,9 @@ export default function Layout() {
             {item.icon}
           </Link>
         ))}
+        <button onClick={toggleTheme} className="mobile-nav-link theme-mobile-btn" title="Switch Theme">
+          {isDark ? <Sun size={24} /> : <Moon size={24} />}
+        </button>
       </nav>
     </div>
   );

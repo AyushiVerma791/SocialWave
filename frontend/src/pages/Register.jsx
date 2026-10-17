@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Sun, Moon } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import { useTheme } from '../ThemeContext';
 
 export default function Register() {
   const { register } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -52,6 +55,9 @@ export default function Register() {
 
   return (
     <div className="auth-container">
+      <button onClick={toggleTheme} className="theme-toggle-floating" title="Switch Theme">
+        {isDark ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
       <div className="auth-card">
         <h1 className="auth-brand">SocialWave</h1>
         <p className="auth-subtitle">Sign up to see photos and videos from your friends.</p>
