@@ -24,6 +24,7 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'auth-service' }));
 app.get('/', (req, res) => res.status(200).json({ success: true, message: 'Auth Service running' }));
 
 app.post('/register', async (req, res) => {
@@ -73,4 +74,19 @@ app.post('/login', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4001;
-app.listen(PORT, () => console.log(`Auth Service running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Auth Service running on port ${PORT}`));
+
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down Auth Service gracefully...`);
+  server.close(async () => {
+    try {
+      await mongoose.connection.close(false);
+      console.log('MongoDB connection closed.');
+    } catch (e) {}
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

@@ -1,0 +1,175 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: controller-service
+  namespace: socialwave
+  labels:
+    app: controller-service
+spec:
+  type: ClusterIP
+  selector:
+    app: controller-service
+  ports:
+    - name: http
+      port: 4000
+      targetPort: 4000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: socialwave
+  labels:
+    app: auth-service
+spec:
+  type: ClusterIP
+  selector:
+    app: auth-service
+  ports:
+    - name: http
+      port: 4001
+      targetPort: 4001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: socialwave
+  labels:
+    app: user-service
+spec:
+  type: ClusterIP
+  selector:
+    app: user-service
+  ports:
+    - name: http
+      port: 4002
+      targetPort: 4002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: post-service
+  namespace: socialwave
+  labels:
+    app: post-service
+spec:
+  type: ClusterIP
+  selector:
+    app: post-service
+  ports:
+    - name: http
+      port: 4003
+      targetPort: 4003
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: feed-service
+  namespace: socialwave
+  labels:
+    app: feed-service
+spec:
+  type: ClusterIP
+  selector:
+    app: feed-service
+  ports:
+    - name: http
+      port: 4004
+      targetPort: 4004
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: comment-service
+  namespace: socialwave
+  labels:
+    app: comment-service
+spec:
+  type: ClusterIP
+  selector:
+    app: comment-service
+  ports:
+    - name: http
+      port: 4005
+      targetPort: 4005
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: friend-service
+  namespace: socialwave
+  labels:
+    app: friend-service
+spec:
+  type: ClusterIP
+  selector:
+    app: friend-service
+  ports:
+    - name: http
+      port: 4006
+      targetPort: 4006
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: socialwave
+  labels:
+    app: notification-service
+spec:
+  type: ClusterIP
+  selector:
+    app: notification-service
+  ports:
+    - name: http
+      port: 4007
+      targetPort: 4007
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: socialwave
+  labels:
+    app: api-gateway
+spec:
+  type: ClusterIP
+  selector:
+    app: api-gateway
+  ports:
+    - name: http
+      port: 4008
+      targetPort: 4008
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: story-service
+  namespace: socialwave
+  labels:
+    app: story-service
+spec:
+  type: ClusterIP
+  selector:
+    app: story-service
+  ports:
+    - name: http
+      port: 4009
+      targetPort: 4009
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: socialwave
+  labels:
+    app: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

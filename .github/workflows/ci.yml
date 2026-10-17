@@ -1,0 +1,70 @@
+name: SocialWave CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-validate:
+    name: Code & Manifest Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate Backend Microservices Syntax
+        run: |
+          for dir in controller-service auth-service user-service post-service feed-service comment-service friend-service notification-service story-service api-gateway; do
+            echo "Checking syntax in $dir..."
+            node -c $dir/index.js
+          done
+
+      - name: Validate Kubernetes Manifests Architecture
+        run: |
+          node gen_k8s.js
+          kubectl kustomize k8s/base > /dev/null
+          kubectl kustomize k8s/overlays/dev > /dev/null
+          kubectl kustomize k8s/overlays/prod > /dev/null
+          echo "All Kustomize overlays are valid."
+
+  docker-build-check:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    needs: lint-and-validate
+
+    strategy:
+      matrix:
+        service:
+          - controller-service
+          - auth-service
+          - user-service
+          - post-service
+          - feed-service
+          - comment-service
+          - friend-service
+          - notification-service
+          - story-service
+          - api-gateway
+          - frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image (${{ matrix.service }})
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: false
+          tags: socialwave-${{ matrix.service }}:test

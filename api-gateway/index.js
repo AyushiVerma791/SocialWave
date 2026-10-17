@@ -10,6 +10,16 @@ const app = express();
 app.use(cors());
 app.use(morgan('dev'));
 
+// Normalize /api prefix so Gateway supports both direct paths and Ingress /api/* paths
+app.use((req, res, next) => {
+  if (req.url.startsWith('/api/')) {
+    req.url = req.url.slice(4);
+  } else if (req.url === '/api') {
+    req.url = '/';
+  }
+  next();
+});
+
 const CTRL_URL = process.env.CTRL_URL || 'http://controller-service:4000';
 
 let servicesStatus = {
@@ -38,6 +48,7 @@ const checkService = (serviceName) => (req, res, next) => {
   next();
 };
 
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'api-gateway' }));
 app.get('/', (req, res) => res.json({ success: true, message: 'API Gateway running' }));
 
 app.get('/services', async (req, res) => {
@@ -48,6 +59,7 @@ app.get('/services', async (req, res) => {
     res.status(500).json({ success: false, data: null, message: 'Failed to reach controller' });
   }
 });
+
 app.post('/toggle', express.json(), async (req, res) => {
   try {
     const response = await axios.post(`${CTRL_URL}/toggle`, req.body);
@@ -74,4 +86,20 @@ app.use('/notify', checkService('notification'), createProxyMiddleware(proxyOpti
 app.use('/story', checkService('story'), createProxyMiddleware(proxyOptions(process.env.STORY_URL || 'http://story-service:4009')));
 
 const PORT = process.env.PORT || 4008;
-app.listen(PORT, () => console.log(`API Gateway running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`API Gateway running on port ${PORT}`));
+
+// Graceful shutdown handling for Kubernetes
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down API Gateway gracefully...`);
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error('Forcefully terminating API Gateway after timeout.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

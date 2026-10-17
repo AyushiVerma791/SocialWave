@@ -19,6 +19,7 @@ const servicesStatus = {
   story: true
 };
 
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'controller-service' }));
 app.get('/', (req, res) => {
   res.status(200).json({ success: true, message: 'Controller Service running' });
 });
@@ -47,4 +48,16 @@ app.post('/toggle', (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Controller Service running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Controller Service running on port ${PORT}`));
+
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down Controller Service gracefully...`);
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

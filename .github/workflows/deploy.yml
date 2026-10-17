@@ -1,0 +1,73 @@
+name: SocialWave Continuous Deployment (AWS EKS)
+
+on:
+  workflow_dispatch: # Manual trigger to prevent accidental deployments
+    inputs:
+      environment:
+        description: 'Target Deployment Environment'
+        required: true
+        default: 'production'
+
+permissions:
+  id-token: write # Required for AWS IAM OIDC Federation
+  contents: read
+
+jobs:
+  deploy:
+    name: Build, Push to ECR & Deploy to EKS
+    runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME || 'socialwave-cluster' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: GitHubActions-SocialWaveDeployment
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Images to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          chmod +x scripts/ecr-build-and-push.sh
+          ./scripts/ecr-build-and-push.sh "$AWS_REGION" "${{ steps.login-ecr.outputs.registry }}" "$IMAGE_TAG"
+
+      - name: Update Kubeconfig
+        run: |
+          aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
+
+      - name: Deploy to EKS via Kustomize
+        run: |
+          cd k8s/overlays/prod
+          kustomize edit set image socialwave-controller=${{ steps.login-ecr.outputs.registry }}/socialwave-controller:${{ github.sha }}
+          kustomize edit set image socialwave-auth=${{ steps.login-ecr.outputs.registry }}/socialwave-auth:${{ github.sha }}
+          kustomize edit set image socialwave-user=${{ steps.login-ecr.outputs.registry }}/socialwave-user:${{ github.sha }}
+          kustomize edit set image socialwave-post=${{ steps.login-ecr.outputs.registry }}/socialwave-post:${{ github.sha }}
+          kustomize edit set image socialwave-feed=${{ steps.login-ecr.outputs.registry }}/socialwave-feed:${{ github.sha }}
+          kustomize edit set image socialwave-comment=${{ steps.login-ecr.outputs.registry }}/socialwave-comment:${{ github.sha }}
+          kustomize edit set image socialwave-friend=${{ steps.login-ecr.outputs.registry }}/socialwave-friend:${{ github.sha }}
+          kustomize edit set image socialwave-notification=${{ steps.login-ecr.outputs.registry }}/socialwave-notification:${{ github.sha }}
+          kustomize edit set image socialwave-story=${{ steps.login-ecr.outputs.registry }}/socialwave-story:${{ github.sha }}
+          kustomize edit set image socialwave-api-gateway=${{ steps.login-ecr.outputs.registry }}/socialwave-api-gateway:${{ github.sha }}
+          kustomize edit set image socialwave-frontend=${{ steps.login-ecr.outputs.registry }}/socialwave-frontend:${{ github.sha }}
+          
+          kubectl apply -k .
+
+      - name: Verify Deployment Rollouts
+        run: |
+          kubectl -n socialwave rollout status deployment/api-gateway --timeout=180s
+          kubectl -n socialwave rollout status deployment/frontend --timeout=180s
+          kubectl -n socialwave get ingress socialwave-ingress

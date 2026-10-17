@@ -3,7 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
+const { uploadMedia, deleteMedia } = require('./storage');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 require('dotenv').config();
@@ -16,12 +16,6 @@ app.use(morgan('dev'));
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/story-db')
   .then(() => console.log('Story Service connected to DB'))
   .catch(err => console.error('DB connection error:', err));
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -54,6 +48,7 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'story-service' }));
 app.get('/', (req, res) => res.status(200).json({ success: true, message: 'Story Service running' }));
 
 app.post('/', authMiddleware, upload.single('media'), async (req, res) => {
@@ -64,18 +59,16 @@ app.post('/', authMiddleware, upload.single('media'), async (req, res) => {
     let mediaType = 'text';
 
     if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
-      
       const isVideo = req.file.mimetype.startsWith('video/');
       mediaType = isVideo ? 'video' : 'image';
 
-      const uploadResponse = await cloudinary.uploader.upload(dataURI, { 
+      const uploadRes = await uploadMedia({
+        file: req.file,
         folder: 'socialwave/stories',
-        resource_type: isVideo ? 'video' : 'image'
+        resourceType: mediaType
       });
-      mediaUrl = uploadResponse.secure_url;
-      mediaPublicId = uploadResponse.public_id;
+      mediaUrl = uploadRes.url;
+      mediaPublicId = uploadRes.publicId;
     }
 
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -193,8 +186,7 @@ app.delete('/:id', authMiddleware, async (req, res) => {
     if (story.userId.toString() !== req.user.userId) return res.status(403).json({ success: false, data: null, message: 'Forbidden' });
     
     if (story.mediaPublicId) {
-      const resourceType = story.mediaType === 'video' ? 'video' : 'image';
-      await cloudinary.uploader.destroy(story.mediaPublicId, { resource_type: resourceType });
+      await deleteMedia(story.mediaPublicId, story.mediaType);
     }
     await Story.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, data: null, message: 'Story deleted' });
@@ -204,4 +196,19 @@ app.delete('/:id', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4009;
-app.listen(PORT, () => console.log(`Story Service running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Story Service running on port ${PORT}`));
+
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down Story Service gracefully...`);
+  server.close(async () => {
+    try {
+      await mongoose.connection.close(false);
+      console.log('MongoDB connection closed.');
+    } catch (e) {}
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

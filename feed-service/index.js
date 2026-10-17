@@ -21,6 +21,7 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'feed-service' }));
 app.get('/', (req, res) => res.status(200).json({ success: true, message: 'Feed Service running' }));
 
 app.get('/:userId', authMiddleware, async (req, res) => {
@@ -61,4 +62,16 @@ app.get('/:userId', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4004;
-app.listen(PORT, () => console.log(`Feed Service running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Feed Service running on port ${PORT}`));
+
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down Feed Service gracefully...`);
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

@@ -37,6 +37,7 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'user-service' }));
 app.get('/', (req, res) => res.status(200).json({ success: true, message: 'User Service running' }));
 
 app.get('/search/:query', async (req, res) => {
@@ -97,4 +98,19 @@ app.put('/:id', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4002;
-app.listen(PORT, () => console.log(`User Service running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`User Service running on port ${PORT}`));
+
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down User Service gracefully...`);
+  server.close(async () => {
+    try {
+      await mongoose.connection.close(false);
+      console.log('MongoDB connection closed.');
+    } catch (e) {}
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

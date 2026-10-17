@@ -35,6 +35,7 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'friend-service' }));
 app.get('/', (req, res) => res.status(200).json({ success: true, message: 'Friend Service running' }));
 
 app.post('/follow', authMiddleware, async (req, res) => {
@@ -134,4 +135,19 @@ app.get('/recommendations/:userId', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4006;
-app.listen(PORT, () => console.log(`Friend Service running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Friend Service running on port ${PORT}`));
+
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down Friend Service gracefully...`);
+  server.close(async () => {
+    try {
+      await mongoose.connection.close(false);
+      console.log('MongoDB connection closed.');
+    } catch (e) {}
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

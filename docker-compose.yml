@@ -15,7 +15,7 @@ services:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -38,7 +38,7 @@ services:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4001', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4001/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -61,7 +61,7 @@ services:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4002', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4002/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -78,16 +78,19 @@ services:
       - PORT=4003
       - MONGO_URI=mongodb://mongodb:27017/post-db
       - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-cloudinary}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     depends_on:
       - mongodb
     networks:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4003', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4003/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -112,7 +115,7 @@ services:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4004', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4004/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -136,7 +139,7 @@ services:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4005', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4005/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -161,7 +164,7 @@ services:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4006', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4006/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -184,7 +187,7 @@ services:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4007', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4007/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -203,16 +206,19 @@ services:
       - JWT_SECRET=${JWT_SECRET:-supersecretjwtkey}
       - NOTIFY_URL=http://notification-service:4007
       - FRIEND_URL=http://friend-service:4006
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-cloudinary}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     depends_on:
       - mongodb
     networks:
       - social-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4009', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4009/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -249,6 +255,11 @@ services:
     networks:
       - social-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4008/healthz', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ---------------------
   # FRONTEND
@@ -265,6 +276,11 @@ services:
     networks:
       - social-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ---------------------
   # DATABASE

@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-gateway-and-frontend
+  namespace: socialwave
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["api-gateway", "frontend"]
+  policyTypes:
+    - Ingress
+  ingress:
+    - {} # Allow ingress from Ingress Controller / ALB
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-microservices-policy
+  namespace: socialwave
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - controller-service
+          - auth-service
+          - user-service
+          - post-service
+          - feed-service
+          - comment-service
+          - friend-service
+          - notification-service
+          - story-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: feed-service
+        - podSelector:
+            matchLabels:
+              app: comment-service
+        - podSelector:
+            matchLabels:
+              app: friend-service
+        - podSelector:
+            matchLabels:
+              app: story-service
+  egress:
+    - {} # Allow egress for DB connections, inter-service HTTP, and cloud APIs (Cloudinary/S3)

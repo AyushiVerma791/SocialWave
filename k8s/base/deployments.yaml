@@ -1,0 +1,789 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-service
+  namespace: socialwave
+  labels:
+    app: controller-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: controller-service
+  template:
+    metadata:
+      labels:
+        app: controller-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: controller-service
+          image: socialwave-controller:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: CTRL_PORT
+          resources:
+            requests:
+              cpu: 20m
+              memory: 48Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: socialwave
+  labels:
+    app: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: auth-service
+          image: socialwave-auth:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4001
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: AUTH_PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: MONGO_URI_AUTH
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4001
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: socialwave
+  labels:
+    app: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: user-service
+          image: socialwave-user:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4002
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: USER_PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: MONGO_URI_USER
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4002
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post-service
+  namespace: socialwave
+  labels:
+    app: post-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: post-service
+  template:
+    metadata:
+      labels:
+        app: post-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: post-service
+          image: socialwave-post:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4003
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: POST_PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: MONGO_URI_POST
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+            - name: STORAGE_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: STORAGE_PROVIDER
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: AWS_REGION
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: CLOUDINARY_API_KEY
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: CLOUDINARY_API_SECRET
+            - name: S3_BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: S3_BUCKET_NAME
+                  optional: true
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4003
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4003
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feed-service
+  namespace: socialwave
+  labels:
+    app: feed-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: feed-service
+  template:
+    metadata:
+      labels:
+        app: feed-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: feed-service
+          image: socialwave-feed:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4004
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: FEED_PORT
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+            - name: FRIEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: FRIEND_URL
+            - name: POST_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: POST_URL
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4004
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4004
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comment-service
+  namespace: socialwave
+  labels:
+    app: comment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: comment-service
+  template:
+    metadata:
+      labels:
+        app: comment-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: comment-service
+          image: socialwave-comment:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4005
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: COMMENT_PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: MONGO_URI_COMMENT
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+            - name: NOTIFY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: NOTIFY_URL
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4005
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4005
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: friend-service
+  namespace: socialwave
+  labels:
+    app: friend-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: friend-service
+  template:
+    metadata:
+      labels:
+        app: friend-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: friend-service
+          image: socialwave-friend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4006
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: FRIEND_PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: MONGO_URI_FRIEND
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+            - name: NOTIFY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: NOTIFY_URL
+            - name: USER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: USER_URL
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4006
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4006
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: socialwave
+  labels:
+    app: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: notification-service
+          image: socialwave-notification:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4007
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: NOTIFY_PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: MONGO_URI_NOTIFY
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 192Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4007
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4007
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: story-service
+  namespace: socialwave
+  labels:
+    app: story-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: story-service
+  template:
+    metadata:
+      labels:
+        app: story-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: story-service
+          image: socialwave-story:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4009
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: STORY_PORT
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: MONGO_URI_STORY
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: JWT_SECRET
+            - name: NOTIFY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: NOTIFY_URL
+            - name: FRIEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: FRIEND_URL
+            - name: STORAGE_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: STORAGE_PROVIDER
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: AWS_REGION
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: CLOUDINARY_API_KEY
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: CLOUDINARY_API_SECRET
+            - name: S3_BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: socialwave-secrets
+                  key: S3_BUCKET_NAME
+                  optional: true
+          resources:
+            requests:
+              cpu: 30m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4009
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4009
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: socialwave
+  labels:
+    app: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: api-gateway
+          image: socialwave-api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4008
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: GATEWAY_PORT
+            - name: CTRL_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: CTRL_URL
+            - name: AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: AUTH_URL
+            - name: USER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: USER_URL
+            - name: POST_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: POST_URL
+            - name: FEED_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: FEED_URL
+            - name: COMMENT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: COMMENT_URL
+            - name: FRIEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: FRIEND_URL
+            - name: NOTIFY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: NOTIFY_URL
+            - name: STORY_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: socialwave-config
+                  key: STORY_URL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4008
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 4008
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: socialwave
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: socialwave-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10

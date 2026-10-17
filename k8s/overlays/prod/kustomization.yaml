@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: socialwave
+
+resources:
+  - ../../base
+
+patches:
+  - path: aws-secrets-patch.yaml
+
+# Configure images for Amazon ECR
+# Replace <AWS_ACCOUNT_ID> and <AWS_REGION> dynamically via CI/CD or kustomize edit set image
+images:
+  - name: socialwave-controller
+    newName: socialwave-controller
+    newTag: v1.0.0
+  - name: socialwave-auth
+    newName: socialwave-auth
+    newTag: v1.0.0
+  - name: socialwave-user
+    newName: socialwave-user
+    newTag: v1.0.0
+  - name: socialwave-post
+    newName: socialwave-post
+    newTag: v1.0.0
+  - name: socialwave-feed
+    newName: socialwave-feed
+    newTag: v1.0.0
+  - name: socialwave-comment
+    newName: socialwave-comment
+    newTag: v1.0.0
+  - name: socialwave-friend
+    newName: socialwave-friend
+    newTag: v1.0.0
+  - name: socialwave-notification
+    newName: socialwave-notification
+    newTag: v1.0.0
+  - name: socialwave-story
+    newName: socialwave-story
+    newTag: v1.0.0
+  - name: socialwave-api-gateway
+    newName: socialwave-api-gateway
+    newTag: v1.0.0
+  - name: socialwave-frontend
+    newName: socialwave-frontend
+    newTag: v1.0.0

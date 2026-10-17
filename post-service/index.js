@@ -3,7 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
+const { uploadMedia, deleteMedia } = require('./storage');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -55,7 +55,8 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-// Healthcheck route intentionally removed so GET / correctly fetches posts
+// Dedicated lightweight healthcheck for Kubernetes and Docker probes (avoids running DB query)
+app.get('/healthz', (req, res) => res.status(200).json({ status: 'UP', service: 'post-service' }));
 
 app.post('/', authMiddleware, upload.single('image'), async (req, res) => {
   try {
@@ -64,11 +65,13 @@ app.post('/', authMiddleware, upload.single('image'), async (req, res) => {
     let imagePublicId = null;
 
     if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
-      const uploadResponse = await cloudinary.uploader.upload(dataURI, { folder: 'socialwave/posts' });
-      imageUrl = uploadResponse.secure_url;
-      imagePublicId = uploadResponse.public_id;
+      const uploadRes = await uploadMedia({
+        file: req.file,
+        folder: 'socialwave/posts',
+        resourceType: 'image'
+      });
+      imageUrl = uploadRes.url;
+      imagePublicId = uploadRes.publicId;
     }
 
     const post = new Post({
@@ -195,7 +198,7 @@ app.delete('/:id', authMiddleware, async (req, res) => {
     if (post.userId.toString() !== req.user.userId) return res.status(403).json({ success: false, data: null, message: 'Forbidden' });
     
     if (post.imagePublicId) {
-      await cloudinary.uploader.destroy(post.imagePublicId);
+      await deleteMedia(post.imagePublicId, 'image');
     }
     
     // Also handle original post if this was a repost
@@ -215,4 +218,19 @@ app.delete('/:id', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4003;
-app.listen(PORT, () => console.log(`Post Service running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Post Service running on port ${PORT}`));
+
+const shutdown = (signal) => {
+  console.log(`Received ${signal}. Shutting down Post Service gracefully...`);
+  server.close(async () => {
+    try {
+      await mongoose.connection.close(false);
+      console.log('MongoDB connection closed.');
+    } catch (e) {}
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
